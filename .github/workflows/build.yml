@@ -1,31 +1,97 @@
-name: Build Check
+name: Build APK with Expo
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
     
-    - name: List files
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Setup Expo
+      run: |
+        npm install -g expo-cli eas-cli
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Create Expo app.json if missing
+      run: |
+        if [ ! -f "app.json" ]; then
+          echo '{
+            "expo": {
+              "name": "馨逸超可爱",
+              "slug": "xinyi-video-player",
+              "version": "1.0.0",
+              "orientation": "portrait",
+              "icon": "./assets/icon.png",
+              "userInterfaceStyle": "light",
+              "splash": {
+                "image": "./assets/splash.png",
+                "resizeMode": "contain",
+                "backgroundColor": "#FF6B8B"
+              },
+              "assetBundlePatterns": [
+                "**/*"
+              ],
+              "ios": {
+                "supportsTablet": true,
+                "bundleIdentifier": "com.xinyi.videoplayer"
+              },
+              "android": {
+                "adaptiveIcon": {
+                  "foregroundImage": "./assets/adaptive-icon.png",
+                  "backgroundColor": "#FF6B8B"
+                },
+                "package": "com.xinyi.videoplayer",
+                "versionCode": 1
+              },
+              "web": {
+                "favicon": "./assets/favicon.png"
+              }
+            }
+          }' > app.json
+        fi
+    
+    - name: Create basic assets directory
+      run: |
+        mkdir -p assets
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > assets/icon.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > assets/splash.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > assets/favicon.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > assets/adaptive-icon.png
+    
+    - name: Prebuild Android project
+      run: |
+        npx expo prebuild --platform android
+    
+    - name: Show directory structure
       run: ls -la
     
-    - name: Check Node.js
-      run: node --version
-    
-    - name: Create success message
+    - name: Create build instructions
       run: |
-        echo "✅ 项目代码验证成功！" > message.txt
-        echo "项目包含以下文件：" >> message.txt
-        ls -la >> message.txt
-        echo "" >> message.txt
-        echo "🎉 现在可以进行APK构建了！" >> message.txt
+        echo "✅ 项目预构建完成！" > BUILD_SUCCESS.md
+        echo "" >> BUILD_SUCCESS.md
+        echo "下一步需要手动构建APK：" >> BUILD_SUCCESS.md
+        echo "1. 在本地电脑安装Android Studio" >> BUILD_SUCCESS.md
+        echo "2. 打开项目中的android文件夹" >> BUILD_SUCCESS.md
+        echo "3. 运行: ./gradlew assembleRelease" >> BUILD_SUCCESS.md
+        echo "" >> BUILD_SUCCESS.md
+        echo "或者使用Expo EAS云端构建：" >> BUILD_SUCCESS.md
+        echo "1. 注册Expo账号: https://expo.dev" >> BUILD_SUCCESS.md
+        echo "2. 运行: eas build --platform android" >> BUILD_SUCCESS.md
     
-    - name: Upload result
+    - name: Upload build instructions
       uses: actions/upload-artifact@v3
       with:
-        name: result
-        path: message.txt
+        name: build-instructions
+        path: BUILD_SUCCESS.md

@@ -1,0 +1,39 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Setup EAS
+      run: npm install -g eas-cli
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Build APK
+      run: |
+        eas build --platform android --non-interactive --no-wait
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: xinyi-video-player
+        path: |
+          *.apk
+          *.aab
+        retention-days: 7

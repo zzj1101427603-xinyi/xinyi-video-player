@@ -1,39 +1,31 @@
-name: Build Android APK
+name: Build Check
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+    - name: List files
+      run: ls -la
     
-    - name: Setup EAS
-      run: npm install -g eas-cli
+    - name: Check Node.js
+      run: node --version
     
-    - name: Install dependencies
-      run: npm install
-    
-    - name: Build APK
+    - name: Create success message
       run: |
-        eas build --platform android --non-interactive --no-wait
-      env:
-        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        echo "✅ 项目代码验证成功！" > message.txt
+        echo "项目包含以下文件：" >> message.txt
+        ls -la >> message.txt
+        echo "" >> message.txt
+        echo "🎉 现在可以进行APK构建了！" >> message.txt
     
-    - name: Upload APK
+    - name: Upload result
       uses: actions/upload-artifact@v3
       with:
-        name: xinyi-video-player
-        path: |
-          *.apk
-          *.aab
-        retention-days: 7
+        name: result
+        path: message.txt

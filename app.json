@@ -7,49 +7,23 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FF6B8B"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.xinyi.videoplayer",
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
+      "bundleIdentifier": "com.xinyi.videoplayer"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF6B8B"
-      },
       "package": "com.xinyi.videoplayer",
-      "permissions": [
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.WAKE_LOCK"
-      ],
       "versionCode": 1
     },
-    "plugins": [
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "允许访问视频文件",
-          "savePhotosPermission": "允许保存视频",
-          "isAccessMediaLocationEnabled": true
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "xinyi-video-player"
-      }
+    "web": {
+      "favicon": "./assets/icon.png"
     }
   }
 }

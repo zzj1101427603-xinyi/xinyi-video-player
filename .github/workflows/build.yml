@@ -18,30 +18,35 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install -g expo-cli eas-cli
+          npm install -g expo-cli
           npm install
-
-      - name: Download valid icon file
-        run: |
-          mkdir -p assets
-          # 下载一个已知有效的简单图标
-          curl -L https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/512px-React-icon.svg.png -o assets/icon.png
-          # 转换为PNG格式（确保是有效的PNG）
-          if command -v convert &> /dev/null; then
-            convert assets/icon.png -resize 1024x1024 assets/icon.png
-          else
-            echo "ImageMagick not available, using original icon"
-          fi
 
       - name: Prebuild Android
         run: |
-          # 跳过图标验证
-          export EXPO_NO_TELEMETRY=1
           expo prebuild --platform android --non-interactive
+
+      - name: Fix Gradle files
+        run: |
+          # 修复expo-haptics的androidSourcesJar任务
+          cd android
+          # 更新gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          
+          # 修复expo-haptics的build.gradle
+          find . -name "build.gradle" -type f | xargs grep -l "expo-haptics" | while read file; do
+            sed -i '/classifier.*androidSourcesJar/d' "$file"
+          done
+          
+          # 确保build.gradle中有compileSdkVersion
+          if ! grep -q "compileSdkVersion" app/build.gradle; then
+            sed -i '/compileSdkVersion/!s/android {/android {\n    compileSdkVersion 33/' app/build.gradle
+          fi
 
       - name: Build Android APK
         run: |
           cd android
+          chmod +x gradlew
           ./gradlew assembleRelease
 
       - name: Upload APK

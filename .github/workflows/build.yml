@@ -23,38 +23,71 @@ jobs:
 
       - name: Create valid icon files
         run: |
-          # 删除现有的assets文件夹（如果存在）
           rm -rf assets
           mkdir -p assets
-          
-          # 创建一个有效的PNG图标（蓝色正方形）
-          echo -e 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABPSURBVCiR7dKxDYAwDEXRQ+IBmH8GQKIDO+QfGFqkSAFKEkU5fafv9v2c5pzV3HPO3dzdRURaa1Vr7eHuT0QcVTUA4L33BUCllKqUcgMfLJI9HcpM7aMAAAAASUVORK5CYII=' | base64 -d > assets/icon.png
-          
-          echo "验证图标文件:"
-          ls -la assets/
-          file assets/icon.png
+          echo -e 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABPSURBVCiR7dKxDYAwDEXRQ+IBmH8GQKIDO+QfGFqkSAFKEkU5fadf9v2c5pzV3HPO3dzdRURaa1Vr7eHuT0QcVTUA4L33BUCllKqUcgMfLJI9HcpM7aMAAAAASUVORK5CYII=' | base64 -d > assets/icon.png
 
       - name: Prebuild Android
         run: |
-          # 设置环境变量，跳过某些检查
           export EXPO_NO_TELEMETRY=1
-          expo prebuild --platform android --non-interactive || echo "Prebuild完成，继续构建"
+          expo prebuild --platform android --non-interactive
+
+      - name: Fix Gradle files
+        run: |
+          echo "正在修复 Gradle 配置问题..."
+          cd android
+          
+          # 1. 修复 expo-haptics 中的 classifier 问题
+          echo "修复 expo-haptics build.gradle..."
+          find . -path "*/expo-haptics/*" -name "build.gradle" | while read file; do
+            echo "处理文件: $file"
+            sed -i '/classifier.*androidSourcesJar/d' "$file"
+          done
+          
+          # 2. 确保 app/build.gradle 中有 compileSdkVersion
+          echo "检查 app/build.gradle..."
+          if ! grep -q "compileSdkVersion rootProject.ext.compileSdkVersion" app/build.gradle; then
+            echo "添加 compileSdkVersion 到 app/build.gradle"
+            sed -i '/android\s*{/a\    compileSdkVersion rootProject.ext.compileSdkVersion' app/build.gradle
+          fi
+          
+          # 3. 确保 expo/build.gradle 中有 compileSdkVersion
+          echo "检查 expo/build.gradle..."
+          if [ -f "node_modules/expo/android/build.gradle" ]; then
+            if ! grep -q "compileSdkVersion" node_modules/expo/android/build.gradle; then
+              echo "添加 compileSdkVersion 到 expo/build.gradle"
+              sed -i '/android\s*{/a\    compileSdkVersion rootProject.ext.compileSdkVersion' node_modules/expo/android/build.gradle
+            fi
+          fi
+          
+          # 4. 检查并确保根项目的 build.gradle 中有 ext 配置
+          echo "检查根 build.gradle 中的 ext 配置..."
+          if ! grep -q "ext {" build.gradle; then
+            echo "在根 build.gradle 中添加 ext 配置..."
+            cat >> build.gradle << 'EOF'
+
+ext {
+    compileSdkVersion = 33
+    targetSdkVersion = 33
+    minSdkVersion = 21
+}
+EOF
+          fi
+          
+          echo "Gradle 文件修复完成！"
 
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          # 尝试构建，如果失败则尝试修复
-          ./gradlew assembleRelease || {
-            echo "首次构建失败，尝试修复后重新构建"
-            # 尝试修复常见的Gradle问题
-            find . -name "*.gradle" -type f -exec sed -i 's/classifier.*//g' {} \;
-            ./gradlew clean
-            ./gradlew assembleRelease
-          }
+          
+          echo "清理并重新构建..."
+          ./gradlew clean
+          
+          echo "开始正式构建..."
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-release

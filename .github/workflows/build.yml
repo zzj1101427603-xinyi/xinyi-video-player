@@ -1,0 +1,66 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm install -g expo-cli
+          npm install
+
+      - name: Create icon file
+        run: |
+          mkdir -p assets
+          # 创建一个简单的蓝色图标
+          echo 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABPSURBVCiR7dKxDYAwDEXRQ+IBmH8GQKIDO+QfGFqkSAFKEkU5fadf9v2c5pzV3HPO3dzdRURaa1Vr7eHuT0QcVTUA4L33BUCllKqUcgMfLJI9HcpM7aMAAAAASUVORK5CYII=' | base64 -d > assets/icon.png
+
+      - name: Prebuild Android
+        run: |
+          export EXPO_NO_TELEMETRY=1
+          npx expo prebuild --platform android --non-interactive
+
+      - name: Fix Gradle issues
+        run: |
+          cd android
+          
+          # 修复 classifier 问题
+          find . -name "build.gradle" -type f | xargs sed -i '/classifier/d'
+          
+          # 添加必要的配置到根 build.gradle
+          if ! grep -q "ext {" build.gradle; then
+            echo "" >> build.gradle
+            echo "ext {" >> build.gradle
+            echo "    compileSdkVersion = 33" >> build.gradle
+            echo "    targetSdkVersion = 33" >> build.gradle
+            echo "    minSdkVersion = 21" >> build.gradle
+            echo "}" >> build.gradle
+          fi
+          
+          # 确保 app/build.gradle 有 compileSdkVersion
+          sed -i 's/compileSdkVersion .*/compileSdkVersion rootProject.ext.compileSdkVersion/' app/build.gradle || true
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew clean
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: android/app/build/outputs/apk/release/app-release.apk

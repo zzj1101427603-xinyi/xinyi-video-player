@@ -20,7 +20,13 @@
     },
     "android": {
       "package": "com.xinyi.videoplayer",
-      "versionCode": 1
+      "versionCode": 1,
+      "compileSdkVersion": 33,
+      "targetSdkVersion": 33,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
     },
     "web": {
       "favicon": "./assets/icon.png"

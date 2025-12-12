@@ -11,19 +11,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.xinyi.videoplayer"
-    },
     "android": {
       "package": "com.xinyi.videoplayer",
-      "versionCode": 1
-    },
-    "web": {
-      "favicon": "./assets/icon.png"
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
     }
   }
 }

@@ -68,7 +68,7 @@ jobs:
         echo "2. 或升级GitHub账户" >> BUILD_REPORT.md
     
     - name: 📎 上传构建报告
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-report
         path: BUILD_REPORT.md
@@ -88,7 +88,7 @@ jobs:
         echo "5. 运行: cd android && ./gradlew assembleRelease" >> 馨逸超可爱-安装说明.txt
     
     - name: 📤 上传安装说明
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: install-instructions
         path: 馨逸超可爱-安装说明.txt
